@@ -33,7 +33,7 @@ enum Labels {
 enum ItemLabels {
     package = 'Package',
     module = 'Module',
-    function = 'Function',
+    type = 'Type',
 }
 
 type ObjectChangeEntryData<T> = Record<
@@ -51,12 +51,12 @@ function Item({
     label,
     packageId,
     moduleName,
-    functionName,
+    typeName,
 }: {
     label: ItemLabels;
     packageId: string;
     moduleName: string;
-    functionName: string;
+    typeName: string;
 }) {
     return (
         <div className="flex justify-between gap-10">
@@ -73,9 +73,9 @@ function Item({
                     label={moduleName}
                 />
             )}
-            {label === ItemLabels.function && (
+            {label === ItemLabels.type && (
                 <Text truncate variant="pBody/medium" color="steel-darker">
-                    {functionName}
+                    {typeName}
                 </Text>
             )}
         </div>
@@ -92,13 +92,13 @@ function ObjectDetail({
     const [expanded, setExpanded] = useState(false);
     const toggleExpand = () => setExpanded((prev) => !prev);
 
-    const [packageId, moduleName, functionName] =
+    const [packageId, moduleName, typeName] =
         objectType?.split('<')[0]?.split('::') || [];
 
     const objectDetailLabels = [
         ItemLabels.package,
         ItemLabels.module,
-        ItemLabels.function,
+        ItemLabels.type,
     ];
 
     return (
@@ -129,7 +129,7 @@ function ObjectDetail({
                             label={label}
                             packageId={packageId}
                             moduleName={moduleName}
-                            functionName={functionName}
+                            typeName={typeName}
                         />
                     ))}
                 </div>
@@ -191,7 +191,8 @@ function ObjectChangeEntries({
 interface ObjectChangeEntryUpdatedProps extends ObjectChangeEntryBaseProps {
     data:
         | ObjectChangeEntryData<SuiObjectChangeMutated>
-        | ObjectChangeEntryData<SuiObjectChangeTransferred>;
+        | ObjectChangeEntryData<SuiObjectChangeTransferred>
+        | ObjectChangeEntryData<SuiObjectChangeCreated>;
 }
 
 export function ObjectChangeEntryUpdated({
@@ -279,21 +280,12 @@ export function ObjectChanges({ objectSummary }: ObjectChangesProps) {
     return (
         <>
             {objectSummary?.created?.length ? (
-                <TransactionBlockCard shadow title="Changes" size="sm">
-                    <div className="flex flex-col gap-3">
-                        {Object.values(createdChangesByOwner).map(
-                            (data, index) => (
-                                <ObjectChangeEntries
-                                    key={index}
-                                    type="created"
-                                    changeEntries={
-                                        data as unknown as SuiObjectChangeCreated[]
-                                    }
-                                />
-                            )
-                        )}
-                    </div>
-                </TransactionBlockCard>
+                <ObjectChangeEntryUpdated
+                    type="created"
+                    data={
+                        createdChangesByOwner as unknown as ObjectChangeEntryData<SuiObjectChangeCreated>
+                    }
+                />
             ) : null}
 
             {objectSummary.mutated?.length ? (

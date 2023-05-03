@@ -30,8 +30,7 @@ const ONRAMP_PROVIDER: OnrampProvider[] = [
         icon: Transak,
         name: 'Transak',
         checkSupported: async () => {
-            // TODO: Remove this check when we're ready to launch Transak:
-            return process.env.NODE_ENV !== 'production';
+            return true;
         },
         getUrl: async (address) => {
             const params = new URLSearchParams({
@@ -59,9 +58,6 @@ const ONRAMP_PROVIDER: OnrampProvider[] = [
         icon: MoonPay,
         name: 'MoonPay',
         checkSupported: async () => {
-            // TODO: Remove this check when we're ready to launch Moonpay:
-            if (process.env.NODE_ENV === 'production') return false;
-
             try {
                 const res = await fetch(
                     `https://api.moonpay.com/v4/ip_address?apiKey=${MOONPAY_API_KEY}`

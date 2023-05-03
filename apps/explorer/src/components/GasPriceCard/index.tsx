@@ -132,7 +132,7 @@ export function GasPriceCard({
         selectedUnit
     );
     const [selectedGraphDuration, setSelectedGraphsDuration] =
-        useState<GraphDurationsType>('7 EPOCHS');
+        useState<GraphDurationsType>('30 EPOCHS');
     const graphEpochs = useMemo(
         () =>
             historicalData?.slice(
@@ -179,11 +179,15 @@ export function GasPriceCard({
                     />
                 </div>
                 <div className="flex gap-6 lg:max-xl:gap-12">
-                    <Stats label="Current" postfix={selectedUnit}>
+                    <Stats label="Current" postfix={selectedUnit} size="sm">
                         {formattedCurrentGasPrice}
                     </Stats>
                     {isAverage7EpochsLoading || formattedAverageGasPrice ? (
-                        <Stats label="7 epochs avg" postfix={selectedUnit}>
+                        <Stats
+                            label="7 epochs avg"
+                            postfix={selectedUnit}
+                            size="sm"
+                        >
                             {formattedAverageGasPrice}
                         </Stats>
                     ) : null}
