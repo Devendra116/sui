@@ -189,7 +189,8 @@ pub struct AuthorityMetrics {
     batch_size: Histogram,
 
     handle_transaction_latency: Histogram,
-    execute_certificate_latency: Histogram,
+    execute_certificate_consensus_latency: Histogram,
+    execute_certificate_non_consensus_latency: Histogram,
     execute_certificate_with_effects_latency: Histogram,
     internal_execution_latency: Histogram,
     prepare_certificate_latency: Histogram,
@@ -236,7 +237,8 @@ const POSITIVE_INT_BUCKETS: &[f64] = &[
 ];
 
 const LATENCY_SEC_BUCKETS: &[f64] = &[
-    0.001, 0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1., 2.5, 5., 10., 20., 30., 60., 90.,
+    0.001, 0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1., 2., 3., 4., 5., 6., 7., 8., 9., 10., 20.,
+    30., 60., 90.,
 ];
 
 impl AuthorityMetrics {
@@ -316,9 +318,16 @@ impl AuthorityMetrics {
                 registry,
             )
             .unwrap(),
-            execute_certificate_latency: register_histogram_with_registry!(
-                "authority_state_execute_certificate_latency",
-                "Latency of executing certificates, including waiting for inputs",
+            execute_certificate_consensus_latency: register_histogram_with_registry!(
+                "authority_state_execute_certificate_consensus_latency",
+                "Latency of executing certificates for consensus transactions, including waiting for inputs",
+                LATENCY_SEC_BUCKETS.to_vec(),
+                registry,
+            )
+            .unwrap(),
+            execute_certificate_non_consensus_latency: register_histogram_with_registry!(
+                "authority_state_execute_certificate_non_consensus_latency",
+                "Latency of executing certificates for non-consensus transactions, including waiting for inputs",
                 LATENCY_SEC_BUCKETS.to_vec(),
                 registry,
             )
@@ -758,7 +767,15 @@ impl AuthorityState {
         certificate: &VerifiedCertificate,
         epoch_store: &Arc<AuthorityPerEpochStore>,
     ) -> SuiResult<VerifiedSignedTransactionEffects> {
-        let _metrics_guard = self.metrics.execute_certificate_latency.start_timer();
+        let _metrics_guard = if certificate.contains_shared_object() {
+            self.metrics
+                .execute_certificate_consensus_latency
+                .start_timer()
+        } else {
+            self.metrics
+                .execute_certificate_non_consensus_latency
+                .start_timer()
+        };
         debug!("execute_certificate");
 
         self.metrics.total_cert_attempts.inc();
@@ -1352,7 +1369,7 @@ impl AuthorityState {
     ) -> SuiResult<u64> {
         let changes = self
             .process_object_index(effects, epoch_store)
-            .tap_err(|e| warn!("{e}"))?;
+            .tap_err(|e| warn!(tx_digest=?digest, "Failed to process object index, index_tx is skipped: {e}"))?;
 
         indexes
             .index_tx(
