@@ -204,6 +204,8 @@ impl Logger for MetricsLogger {
             .observe(req_latency_secs);
 
         if !success {
+            // don't report client errors
+
             self.metrics
                 .errors_by_route
                 .with_label_values(&[method_name])
